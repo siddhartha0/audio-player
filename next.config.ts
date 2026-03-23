@@ -1,10 +1,26 @@
-import withPWA from 'next-pwa';
+import type { NextConfig } from 'next';
+import withPWAInit from '@ducanh2912/next-pwa';
 
-export default withPWA({
+const withPWA = withPWAInit({
   dest: 'public',
   register: true,
-  skipWaiting: true,
+  // skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
-  // point to your custom SW that extends next-pwa's generated one
-  customWorkerDir: 'worker', // put your push logic in /worker/index.js
+  workboxOptions: {
+    disableDevLogs: true,
+  },
 });
+
+const nextConfig: NextConfig = {
+  headers: async () => [
+    {
+      source: '/(.*)',
+      headers: [
+        { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+        { key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' },
+      ],
+    },
+  ],
+};
+
+export default withPWA(nextConfig);
