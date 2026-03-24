@@ -12,6 +12,12 @@ export const SIDEBAR_MENU = [
     href: '/library',
   },
   {
+    id: 'Playlist-3',
+    name: 'Playlists',
+    icon: 'mingcute:playlist-fill',
+    href: '/playlists',
+  },
+  {
     id: 'settings-3',
     name: 'Settings',
     icon: 'material-symbols:settings-rounded',
