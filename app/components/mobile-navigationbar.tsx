@@ -11,8 +11,8 @@ export const MobileNavigationBar = () => {
           className="flex flex-col gap-1 place-items-center"
           href={menu.href}
         >
-          <Icon icon={menu.icon} />
-          <p className="text-xs">{menu.name}</p>
+          <Icon icon={menu.icon} className="text-white" />
+          <p className="text-xs text-white">{menu.name}</p>
         </Link>
       ))}
     </div>
