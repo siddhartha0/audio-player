@@ -72,7 +72,7 @@ export function FolderSetup() {
 
   if (canUseFSA) {
     return (
-      <div className="h-full bg-theme p-3">
+      <div className="h-full bg-theme text-white p-3">
         <button onClick={handlePickFolder}>Choose music folder</button>
 
         {isImporting ? <p>Importing...</p> : null}
@@ -103,7 +103,7 @@ export function FolderSetup() {
                       />
                     </section>
 
-                    <p className="text-xs text white">{t.title}</p>
+                    <p className="text-xs ">{t.title}</p>
                   </div>
 
                   <div className="flex gap-2">
