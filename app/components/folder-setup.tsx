@@ -72,7 +72,7 @@ export function FolderSetup() {
 
   if (canUseFSA) {
     return (
-      <div className="h-full p-3">
+      <div className="h-full bg-theme p-3">
         <button onClick={handlePickFolder}>Choose music folder</button>
 
         {isImporting ? <p>Importing...</p> : null}
