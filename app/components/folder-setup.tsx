@@ -84,7 +84,7 @@ export function FolderSetup() {
 
         {tracks.length > 0 ? (
           <div className="flex  h-full flex-col justify-between mt-4 ">
-            <div className="flex h-[98%] flex-col gap-2 overflow-scroll">
+            <div className="flex flex-col gap-2 overflow-scroll">
               {tracks.map((t) => (
                 <button
                   key={t.id}
@@ -92,8 +92,8 @@ export function FolderSetup() {
                   className={`px-2 py-1  flex   cursor-pointer  justify-between place-items-center gap-2  `}
                   type="button"
                 >
-                  <div className="flex gap-2 ">
-                    <section className="bg-white p-2 rounded-md">
+                  <div className="flex place-items-center text-start    gap-2 ">
+                    <section className="bg-white p-2  rounded-md">
                       <Image
                         className="dark:invert"
                         src={'/vercel.svg'}
@@ -103,7 +103,7 @@ export function FolderSetup() {
                       />
                     </section>
 
-                    <p className="text-xs ">{t.title}</p>
+                    <p className={`text-[10px]`}>{t.title}</p>
                   </div>
 
                   <div className="flex gap-2">

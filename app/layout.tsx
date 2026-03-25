@@ -32,10 +32,10 @@ export default function RootLayout({
         <section className="min-h-full md:flex hidden">
           <Sidebar />
         </section>
-        <section className="flex flex-1 h-[90%] w-full md:min-h-full    ">
+        <section className="flex flex-1 h-[90%] w-full md:min-h-full     ">
           {children}
         </section>
-        <section className="flex md:hidden  w-full">
+        <section className="flex md:hidden   w-full">
           <MobileNavigationBar />
         </section>
       </body>
