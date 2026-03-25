@@ -84,7 +84,7 @@ export function FolderSetup() {
 
         {tracks.length > 0 ? (
           <div className="flex  h-full flex-col justify-between mt-4 ">
-            <div className="flex h-[80%] flex-col gap-2 overflow-scroll">
+            <div className="flex h-[98%] flex-col gap-2 overflow-scroll">
               {tracks.map((t) => (
                 <button
                   key={t.id}
