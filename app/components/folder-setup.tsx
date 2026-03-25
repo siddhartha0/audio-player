@@ -92,7 +92,7 @@ export function FolderSetup() {
                   className={`px-2 py-1  flex   cursor-pointer  justify-between place-items-center gap-2  `}
                   type="button"
                 >
-                  <div className="flex gap-2 place-items-center">
+                  <div className="flex gap-2 ">
                     <section className="bg-white p-2 rounded-md">
                       <Image
                         className="dark:invert"
