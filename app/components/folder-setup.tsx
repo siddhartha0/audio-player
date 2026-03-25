@@ -1,17 +1,16 @@
 // components/FolderSetup.tsx
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import {
-  requestMusicFolder,
-  scanFolder,
-} from '../lib/filesystem';
+import { requestMusicFolder, scanFolder } from '../lib/filesystem';
 import { MobileImport } from './MobileImport';
+import Image from 'next/image';
+import { Icon } from '@iconify/react';
 
 const canUseFSA =
   typeof window !== 'undefined' && 'showDirectoryPicker' in window;
 
 export function FolderSetup() {
-  const [folderName, setFolderName] = useState<string | null>(null);
+  const [_, setFolderName] = useState<string | null>(null);
   const [tracks, setTracks] = useState<
     Array<{ id: string; title: string; url: string }>
   >([]);
@@ -48,9 +47,13 @@ export function FolderSetup() {
 
       const fileHandles = await scanFolder(handle);
 
+      console.log(fileHandles, 'files from imported folder');
+
       const newTracks: Array<{ id: string; title: string; url: string }> = [];
       for (const fileHandle of fileHandles) {
         const file = await fileHandle.getFile();
+
+        console.log(file, 'file details');
         const url = URL.createObjectURL(file);
         const id = `${file.name}-${file.size}-${file.lastModified}`;
         newTracks.push({ id, title: file.name, url });
@@ -69,14 +72,8 @@ export function FolderSetup() {
 
   if (canUseFSA) {
     return (
-      <div>
-        {folderName ? (
-          <p>
-            Watching: <strong>{folderName}</strong>
-          </p>
-        ) : (
-          <button onClick={handlePickFolder}>Choose music folder</button>
-        )}
+      <div className="h-full p-3">
+        <button onClick={handlePickFolder}>Choose music folder</button>
 
         {isImporting ? <p>Importing...</p> : null}
         {error ? (
@@ -86,30 +83,43 @@ export function FolderSetup() {
         ) : null}
 
         {tracks.length > 0 ? (
-          <div className="flex flex-col gap-3 mt-4">
-            <div>
+          <div className="flex  h-full flex-col justify-between mt-4 ">
+            <div className="flex h-[80%] flex-col gap-2 overflow-scroll">
+              {tracks.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setSelectedTrackId(t.id)}
+                  className={`px-2 py-1  flex   cursor-pointer  justify-between place-items-center gap-2  `}
+                  type="button"
+                >
+                  <div className="flex gap-2 place-items-center">
+                    <section className="bg-white p-2 rounded-md">
+                      <Image
+                        className="dark:invert"
+                        src={'/vercel.svg'}
+                        alt="Vercel logomark"
+                        width={16}
+                        height={16}
+                      />
+                    </section>
+
+                    <p className="text-xs">{t.title}</p>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Icon icon="weui:like-outlined" />
+                    <Icon icon="ant-design:more-outlined" />
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <div className="h-[20%]">
               <audio
                 controls
                 src={selectedTrack?.url ?? undefined}
                 style={{ width: '100%' }}
               />
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {tracks.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setSelectedTrackId(t.id)}
-                  className={`px-2 py-1 rounded-md border ${
-                    t.id === selectedTrackId
-                      ? 'bg-black text-white border-black'
-                      : 'bg-white text-black border-black/20'
-                  }`}
-                  type="button"
-                >
-                  {t.title}
-                </button>
-              ))}
             </div>
           </div>
         ) : null}
