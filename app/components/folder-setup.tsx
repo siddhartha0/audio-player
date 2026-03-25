@@ -103,7 +103,7 @@ export function FolderSetup() {
                       />
                     </section>
 
-                    <p className="text-xs">{t.title}</p>
+                    <p className="text-xs text white">{t.title}</p>
                   </div>
 
                   <div className="flex gap-2">
