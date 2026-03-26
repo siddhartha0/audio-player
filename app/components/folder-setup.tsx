@@ -19,8 +19,13 @@ export function FolderSetup() {
   const [isImporting, setIsImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // ── New state ──────────────────────────────────────────────────────────────
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+
   useEffect(() => {
-    // Cleanup blob URLs when component unmounts.
     return () => {
       for (const t of tracksRef.current) URL.revokeObjectURL(t.url);
     };
@@ -30,13 +35,55 @@ export function FolderSetup() {
     tracksRef.current = tracks;
   }, [tracks]);
 
+  // When selected track changes, load and auto-play
+  useEffect(() => {
+    if (!audioRef.current) return;
+    audioRef.current.load();
+    audioRef.current.play();
+    setIsPlaying(true);
+    setProgress(0);
+  }, [selectedTrackId]);
+
   const selectedTrack = tracks.find((t) => t.id === selectedTrackId) ?? null;
+
+  const togglePlay = () => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play();
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  const handlePrev = () => {
+    const idx = tracks.findIndex((t) => t.id === selectedTrackId);
+    const newIdx = (idx - 1 + tracks.length) % tracks.length;
+    setSelectedTrackId(tracks[newIdx].id);
+  };
+
+  const handleNext = () => {
+    const idx = tracks.findIndex((t) => t.id === selectedTrackId);
+    const newIdx = (idx + 1) % tracks.length;
+    setSelectedTrackId(tracks[newIdx].id);
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = Number(e.target.value);
+    if (audioRef.current) audioRef.current.currentTime = val;
+    setProgress(val);
+  };
+
+  const fmt = (s: number) => {
+    if (!s || isNaN(s)) return '0:00';
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m}:${sec.toString().padStart(2, '0')}`;
+  };
 
   async function handlePickFolder() {
     setError(null);
     setIsImporting(true);
-
-    // Revoke previous URLs (if any) before importing new tracks.
     for (const t of tracks) URL.revokeObjectURL(t.url);
     setTracks([]);
     setSelectedTrackId(null);
@@ -44,15 +91,12 @@ export function FolderSetup() {
     try {
       const handle = await requestMusicFolder();
       setFolderName(handle.name);
-
       const fileHandles = await scanFolder(handle);
-
       console.log(fileHandles, 'files from imported folder');
 
       const newTracks: Array<{ id: string; title: string; url: string }> = [];
       for (const fileHandle of fileHandles) {
         const file = await fileHandle.getFile();
-
         console.log(file, 'file details');
         const url = URL.createObjectURL(file);
         const id = `${file.name}-${file.size}-${file.lastModified}`;
@@ -83,17 +127,20 @@ export function FolderSetup() {
         ) : null}
 
         {tracks.length > 0 ? (
-          <div className="flex  h-full flex-col justify-between mt-4 ">
+          <div className="flex h-full flex-col justify-between mt-4">
+            {/* ── Track list ───────────────────────────────────────────────── */}
             <div className="flex flex-col gap-2 overflow-scroll">
               {tracks.map((t) => (
                 <button
                   key={t.id}
                   onClick={() => setSelectedTrackId(t.id)}
-                  className={`px-2 py-1  flex   cursor-pointer  justify-between place-items-center gap-2  `}
+                  className={`px-2 py-1 flex cursor-pointer justify-between place-items-center gap-2 ${
+                    selectedTrackId === t.id ? 'opacity-100' : 'opacity-60'
+                  }`}
                   type="button"
                 >
-                  <div className="flex place-items-center text-start    gap-2 ">
-                    <section className="bg-white p-2  rounded-md">
+                  <div className="flex place-items-center text-start gap-2">
+                    <section className="bg-white p-2 rounded-md">
                       <Image
                         className="dark:invert"
                         src={'/vercel.svg'}
@@ -102,8 +149,7 @@ export function FolderSetup() {
                         height={16}
                       />
                     </section>
-
-                    <p className={`text-[10px]`}>{t.title}</p>
+                    <p className="text-[10px]">{t.title}</p>
                   </div>
 
                   <div className="flex gap-2">
@@ -114,13 +160,77 @@ export function FolderSetup() {
               ))}
             </div>
 
-            <div className="h-[20%]">
-              <audio
-                controls
-                src={selectedTrack?.url ?? undefined}
-                style={{ width: '100%' }}
-              />
+            {/* ── Player UI ────────────────────────────────────────────────── */}
+            <div className="border rounded-2xl shadow-md px-4 py-3 flex flex-col gap-2 bg-red-50">
+              <div className="flex items-center gap-3">
+                {/* Info */}
+                <div className="flex flex-col flex-1 min-w-0">
+                  <section className="flex items-center gap-2">
+                    <span className="font-semibold text-sm text-gray-900 truncate">
+                      {selectedTrack?.title}
+                    </span>
+                  </section>
+
+                  <section className="flex place-items-center gap-2 place-self-center mt-1">
+                    <Icon
+                      icon="fluent:previous-16-filled"
+                      className="cursor-pointer text-gray-500 hover:text-gray-800"
+                      onClick={handlePrev}
+                    />
+                    <Icon
+                      icon={isPlaying ? 'mdi-light:pause' : 'mdi-light:play'}
+                      className="cursor-pointer text-gray-500 hover:text-gray-800 text-xl"
+                      onClick={togglePlay}
+                    />
+                    <Icon
+                      icon="fluent:next-16-filled"
+                      className="cursor-pointer text-gray-500 hover:text-gray-800"
+                      onClick={handleNext}
+                    />
+                  </section>
+                </div>
+
+                {/* Pause/Play pill */}
+                <button
+                  onClick={togglePlay}
+                  className="flex items-center gap-1 bg-gray-900 text-white text-xs font-semibold px-3 py-2 rounded-lg shrink-0"
+                >
+                  <Icon icon={isPlaying ? 'mdi:pause' : 'mdi:play'} />
+                  {isPlaying ? 'Pause' : 'Play'}
+                </button>
+              </div>
+
+              {/* ── Progress bar + timestamps ───────────────────────────────── */}
+              <div className="flex flex-col gap-1">
+                <input
+                  type="range"
+                  min={0}
+                  max={duration || 100}
+                  value={progress}
+                  onChange={handleSeek}
+                  className="w-full accent-gray-900 cursor-pointer"
+                />
+                <div className="flex justify-between text-[10px] text-gray-400">
+                  <span>{fmt(progress)}</span>
+                  <span>{fmt(duration)}</span>
+                </div>
+              </div>
             </div>
+
+            {/* ── Hidden audio element ────────────────────────────────────── */}
+            <audio
+              ref={audioRef}
+              src={selectedTrack?.url ?? undefined}
+              onTimeUpdate={() =>
+                setProgress(audioRef.current?.currentTime ?? 0)
+              }
+              onLoadedMetadata={() =>
+                setDuration(audioRef.current?.duration ?? 0)
+              }
+              onEnded={handleNext}
+              onPlay={() => setIsPlaying(true)}
+              onPause={() => setIsPlaying(false)}
+            />
           </div>
         ) : null}
       </div>
