@@ -1,10 +1,18 @@
 // components/FolderSetup.tsx
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { requestMusicFolder, scanFolder } from '../lib/filesystem';
+
 import { MobileImport } from './MobileImport';
 import Image from 'next/image';
 import { Icon } from '@iconify/react';
+import {
+  fmt,
+  handleNext,
+  handlePickFolder,
+  handlePrev,
+  handleSeek,
+  togglePlay,
+} from '../lib/music-controll';
 
 const canUseFSA =
   typeof window !== 'undefined' && 'showDirectoryPicker' in window;
@@ -46,78 +54,23 @@ export function FolderSetup() {
 
   const selectedTrack = tracks.find((t) => t.id === selectedTrackId) ?? null;
 
-  const togglePlay = () => {
-    if (!audioRef.current) return;
-    if (isPlaying) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play();
-    }
-    setIsPlaying(!isPlaying);
-  };
-
-  const handlePrev = () => {
-    const idx = tracks.findIndex((t) => t.id === selectedTrackId);
-    const newIdx = (idx - 1 + tracks.length) % tracks.length;
-    setSelectedTrackId(tracks[newIdx].id);
-  };
-
-  const handleNext = () => {
-    const idx = tracks.findIndex((t) => t.id === selectedTrackId);
-    const newIdx = (idx + 1) % tracks.length;
-    setSelectedTrackId(tracks[newIdx].id);
-  };
-
-  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = Number(e.target.value);
-    if (audioRef.current) audioRef.current.currentTime = val;
-    setProgress(val);
-  };
-
-  const fmt = (s: number) => {
-    if (!s || isNaN(s)) return '0:00';
-    const m = Math.floor(s / 60);
-    const sec = Math.floor(s % 60);
-    return `${m}:${sec.toString().padStart(2, '0')}`;
-  };
-
-  async function handlePickFolder() {
-    setError(null);
-    setIsImporting(true);
-    for (const t of tracks) URL.revokeObjectURL(t.url);
-    setTracks([]);
-    setSelectedTrackId(null);
-
-    try {
-      const handle = await requestMusicFolder();
-      setFolderName(handle.name);
-      const fileHandles = await scanFolder(handle);
-      console.log(fileHandles, 'files from imported folder');
-
-      const newTracks: Array<{ id: string; title: string; url: string }> = [];
-      for (const fileHandle of fileHandles) {
-        const file = await fileHandle.getFile();
-        console.log(file, 'file details');
-        const url = URL.createObjectURL(file);
-        const id = `${file.name}-${file.size}-${file.lastModified}`;
-        newTracks.push({ id, title: file.name, url });
-      }
-
-      setTracks(newTracks);
-      setSelectedTrackId(newTracks[0]?.id ?? null);
-    } catch (e) {
-      setError(
-        e instanceof Error ? e.message : 'Failed to import music folder'
-      );
-    } finally {
-      setIsImporting(false);
-    }
-  }
-
   if (canUseFSA) {
     return (
       <div className="h-full bg-theme text-white p-3">
-        <button onClick={handlePickFolder}>Choose music folder</button>
+        <button
+          onClick={() => {
+            handlePickFolder({
+              setError,
+              setFolderName,
+              setIsImporting,
+              setSelectedTrackId,
+              setTracks,
+              tracks,
+            });
+          }}
+        >
+          Choose music folder
+        </button>
 
         {isImporting ? <p>Importing...</p> : null}
         {error ? (
@@ -175,24 +128,48 @@ export function FolderSetup() {
                     <Icon
                       icon="fluent:previous-16-filled"
                       className="cursor-pointer text-gray-500 hover:text-gray-800"
-                      onClick={handlePrev}
+                      onClick={() => {
+                        handlePrev({
+                          selectedTrackId,
+                          setSelectedTrackId,
+                          tracks,
+                        });
+                      }}
                     />
                     <Icon
                       icon={isPlaying ? 'mdi-light:pause' : 'mdi-light:play'}
                       className="cursor-pointer text-gray-500 hover:text-gray-800 text-xl"
-                      onClick={togglePlay}
+                      onClick={() => {
+                        togglePlay({
+                          audioRef,
+                          isPlaying,
+                          setIsPlaying,
+                        });
+                      }}
                     />
                     <Icon
                       icon="fluent:next-16-filled"
                       className="cursor-pointer text-gray-500 hover:text-gray-800"
-                      onClick={handleNext}
+                      onClick={() => {
+                        handleNext({
+                          selectedTrackId,
+                          setSelectedTrackId,
+                          tracks,
+                        });
+                      }}
                     />
                   </section>
                 </div>
 
                 {/* Pause/Play pill */}
                 <button
-                  onClick={togglePlay}
+                  onClick={() => {
+                    togglePlay({
+                      audioRef,
+                      isPlaying,
+                      setIsPlaying,
+                    });
+                  }}
                   className="flex items-center gap-1 bg-gray-900 text-white text-xs font-semibold px-3 py-2 rounded-lg shrink-0"
                 >
                   <Icon icon={isPlaying ? 'mdi:pause' : 'mdi:play'} />
@@ -207,7 +184,13 @@ export function FolderSetup() {
                   min={0}
                   max={duration || 100}
                   value={progress}
-                  onChange={handleSeek}
+                  onChange={(e) => {
+                    handleSeek({
+                      audioRef,
+                      e,
+                      setProgress,
+                    });
+                  }}
                   className="w-full accent-gray-900 cursor-pointer"
                 />
                 <div className="flex justify-between text-[10px] text-gray-400">
@@ -227,7 +210,13 @@ export function FolderSetup() {
               onLoadedMetadata={() =>
                 setDuration(audioRef.current?.duration ?? 0)
               }
-              onEnded={handleNext}
+              onEnded={() => {
+                handleNext({
+                  selectedTrackId,
+                  setSelectedTrackId,
+                  tracks,
+                });
+              }}
               onPlay={() => setIsPlaying(true)}
               onPause={() => setIsPlaying(false)}
             />
