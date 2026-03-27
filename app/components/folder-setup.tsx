@@ -13,6 +13,7 @@ import {
   handleSeek,
   togglePlay,
 } from '../lib/music-controll';
+import { musicDb } from '../db/music';
 
 const canUseFSA =
   typeof window !== 'undefined' && 'showDirectoryPicker' in window;
@@ -53,6 +54,15 @@ export function FolderSetup() {
   }, [selectedTrackId]);
 
   const selectedTrack = tracks.find((t) => t.id === selectedTrackId) ?? null;
+
+  useEffect(() => {
+    async function loadTracks() {
+      const saved = await musicDb.music.toArray();
+      setTracks(saved);
+      setSelectedTrackId(saved[0]?.id ?? null);
+    }
+    loadTracks();
+  }, []);
 
   if (canUseFSA) {
     return (

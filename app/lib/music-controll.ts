@@ -1,5 +1,6 @@
 import { RefObject } from 'react';
 import { requestMusicFolder, scanFolder } from './filesystem';
+import { musicDb } from '../db/music';
 
 interface TrackTypes {
   id: string;
@@ -99,7 +100,6 @@ export async function handlePickFolder({
     const handle = await requestMusicFolder();
     setFolderName(handle.name);
     const fileHandles = await scanFolder(handle);
-    console.log(fileHandles, 'files from imported folder');
 
     const newTracks: Array<{ id: string; title: string; url: string }> = [];
     for (const fileHandle of fileHandles) {
@@ -108,6 +108,11 @@ export async function handlePickFolder({
       const url = URL.createObjectURL(file);
       const id = `${file.name}-${file.size}-${file.lastModified}`;
       newTracks.push({ id, title: file.name, url });
+
+      await musicDb?.music?.add({
+        title: file?.name,
+        url: url,
+      });
     }
 
     setTracks(newTracks);
